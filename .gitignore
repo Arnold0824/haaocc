@@ -1,0 +1,41 @@
+# Data and experiments
+data/
+work_dirs/
+ckpts/
+checkpoints/
+logs/
+
+# Model artifacts
+*.pth
+*.pt
+*.ckpt
+*.onnx
+*.engine
+*.trt
+
+# # Generated outputs
+# *.log
+# *.log.json
+# *.npz
+# *.zip
+# *.jpg
+# *.png
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Build outputs
+build/
+dist/
+*.egg-info/
+*.o
+*.so
+cuda-build/
+CMakeFiles/
+CMakeCache.txt
+*.a
+
+# Editor files
+.idea/
+.vscode/
