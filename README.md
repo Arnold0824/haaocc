@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <img src="figs/architecture.png" width="94%" alt="Overall pipeline of the proposed method">
+  <img src="figs/Figure_1.png" width="94%" alt="Overall pipeline of the proposed method">
 </p>
 
 ## Overview
@@ -51,7 +51,7 @@ All latency numbers below are deployment-side FP16 TensorRT measurements with ba
 ## HAA Occupancy Head
 
 <p align="center">
-  <img src="figs/cth_haa_head_detail.png" width="88%" alt="Detailed structure of the HAA-enhanced occupancy head">
+  <img src="figs/Figure_3.png" width="88%" alt="Detailed structure of the HAA-enhanced occupancy head">
 </p>
 
 <p align="center">
