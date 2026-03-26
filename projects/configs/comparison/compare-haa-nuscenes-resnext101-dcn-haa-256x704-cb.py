@@ -106,6 +106,7 @@ model = dict(
         use_predicter=True,
         class_balance=True,
         use_haa = True,
+        haa_mode='feature_gate',
         loss_occ=dict(
             type='CustomFocalLoss',
             use_sigmoid=True,
@@ -254,4 +255,3 @@ resume_from = None
 # fp16 = dict(loss_scale='dynamic')
 evaluation = dict(interval=1,start=1, pipeline=test_pipeline,metric='miou',save_best='miou')
 checkpoint_config = dict(interval=1, max_keep_ckpts=5)
-

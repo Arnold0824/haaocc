@@ -304,10 +304,13 @@ class BEVOCCHead2D(BaseModule):
 
 @HEADS.register_module()
 class BEVOCCHead2D_HAA(BEVOCCHead2D):
-    def __init__(self, use_haa=True, **kwargs):
+    def __init__(self, use_haa=True, haa_mode='feature_gate', **kwargs):
         super(BEVOCCHead2D_HAA, self).__init__(**kwargs)
         self.use_haa = use_haa
+        self.haa_mode = haa_mode
         if self.use_haa:
+            if self.haa_mode not in ('feature_gate', 'legacy_logit_scale'):
+                raise ValueError(f'Unsupported haa_mode: {self.haa_mode}')
             self.gamma = nn.Parameter(torch.zeros(1))
             mid_channels = max(self.in_dim // 2, 1)
             self.haa = nn.Sequential(
@@ -317,6 +320,11 @@ class BEVOCCHead2D_HAA(BEVOCCHead2D):
                 nn.Conv2d(mid_channels, self.Dz, kernel_size=1, padding=0, bias=True),
                 nn.Tanh(),
             )
+            if self.haa_mode == 'feature_gate':
+                gate_channels = self.out_dim if self.use_predicter else self.num_classes * self.Dz
+                # Map the height response back to decoder channels so HAA modulates
+                # features before class logits are produced.
+                self.haa_gate_proj = nn.Conv2d(self.Dz, gate_channels, kernel_size=1, padding=0, bias=True)
 
     def forward(self, img_feats):
         """
@@ -327,6 +335,15 @@ class BEVOCCHead2D_HAA(BEVOCCHead2D):
             occ_pred: (B, Dx, Dy, Dz, n_cls)
         """
         occ_feats = self.final_conv(img_feats)     # (B, C_out, Dy, Dx)
+        if self.use_haa and self.haa_mode == 'feature_gate':
+            height_response = self.haa(img_feats)      # (B, Dz, Dy, Dx)
+            channel_gate = torch.tanh(self.haa_gate_proj(height_response))   # (B, C_out, Dy, Dx)
+            if channel_gate.shape != occ_feats.shape:
+                raise RuntimeError(
+                    f"HAA feature-gate shape mismatch: gate={channel_gate.shape}, feats={occ_feats.shape}"
+                )
+            occ_feats = self.gamma * (occ_feats * channel_gate) + occ_feats
+
         if self.use_predicter:
             # Keep the same flatten order as BEVOCCHead2D:
             # (B, Dx, Dy, Dz*n_cls) -> view(..., Dz, n_cls)
@@ -340,7 +357,7 @@ class BEVOCCHead2D_HAA(BEVOCCHead2D):
             occ_voxels = occ_feats.view(bs, self.Dz, self.num_classes, dy, dx)         # (B, Dz, n_cls, Dy, Dx)
             occ_voxels = occ_voxels.permute(0, 2, 1, 3, 4).contiguous()                # (B, n_cls, Dz, Dy, Dx)
 
-        if self.use_haa:
+        if self.use_haa and self.haa_mode == 'legacy_logit_scale':
             # Height-aware attention map: (B, Dz, Dy, Dx) -> (B, 1, Dz, Dy, Dx)
             attn = self.haa(img_feats).unsqueeze(1)
             if attn.shape[-3:] != occ_voxels.shape[-3:]:
