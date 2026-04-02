@@ -12,9 +12,11 @@ The configs below correspond to the primary HAA-enhanced models discussed in the
 
 | Config | Purpose |
 | --- | --- |
-| `proposed-nuscenes-resnext50-dcn-haa-900x1600-focal-ce-cb.py` | Main HAA model with ResNeXt50, DCN, and the full multi-loss setup |
+| `proposed-nuscenes-resnext50-dcn-haa-256x704-focal-ce-cb.py` | 256x704 final model: ResNeXt-50-32x4d, DCN, HAA, and the full multi-loss setup |
+| `proposed-nuscenes-resnext50-dcn-haa-900x1600-focal-ce-cb.py` | Historical higher-resolution HAA variant kept for reference |
 | `proposed-nuscenes-resnext101-dcn-haa-256x704-cb.py` | Alternative HAA model with a different backbone and resolution budget |
-| `proposed-nuscenes-resnext50-dcn-haa-900x1600-focal-ce-cb-trt.py` | TensorRT-facing wrapper for deployment experiments |
+| `proposed-nuscenes-resnext50-dcn-haa-256x704-focal-ce-cb-trt.py` | TensorRT-facing wrapper for the 256x704 final model |
+| `proposed-nuscenes-resnext50-dcn-haa-900x1600-focal-ce-cb-trt.py` | TensorRT-facing wrapper for the historical higher-resolution variant |
 | `proposed-nuscenes-resnext101-dcn-haa-256x704-cb-trt.py` | TensorRT-facing wrapper for the ResNeXt101 variant |
 
 ## 2. Controlled Comparison Configs
@@ -77,13 +79,22 @@ Representative files include:
 
 - `main-nuscenes-resnext50-dcn-haa-900x1600-focal-ce-cb.py`
 - `main-nuscenes-resnext101-dcn-haa-256x704-cb.py`
+- `main-nuscenes-resnext50-dcn-haa-256x704-focal-ce-cb.py`
 - `baseline-nuscenes-bevdet-occ-r50-256x704.py`
+- `ablation-nuscenes-resnext50-256x704-focal-ce.py`
+- `ablation-nuscenes-resnext50-dcn-256x704-focal-ce.py`
+- `ablation-nuscenes-resnext50-dcn-haa-256x704-cb.py`
+- `ablation-nuscenes-resnext50-dcn-256x704-ce-only.py`
+- `ablation-nuscenes-resnext50-dcn-256x704-focal.py`
+- `ablation-nuscenes-resnext50-dcn-256x704-focal-ce-cb.py`
 - `ablation-nuscenes-resnext101-dcn-256x704-focal-ce-cb.py`
+- `deployment-nuscenes-resnext50-dcn-haa-256x704-focal-ce-cb-trt.py`
 - `deployment-nuscenes-resnext50-dcn-haa-900x1600-focal-ce-cb-trt.py`
 
 ## 4. How to Choose a Config
 
 - Use `proposed_method/` if you want the paper model directly.
+- Use the 256x704 configs in `occ_study/` if you want the main comparison and ablation chain in one place.
 - Use `comparison/` if you want a controlled baseline, ablation, or reference experiment.
 - Use `occ_study/` if you want the full archive in one directory for scripting, sweeps, or deployment export.
 

@@ -32,16 +32,16 @@ data/
 
 ## 2. Train the Main Models
 
-### HAA-enhanced paper model
+### 256x704 final HAA model
 
 ```bash
 bash tools/dist_train.sh \
-  projects/configs/proposed_method/proposed-nuscenes-resnext50-dcn-haa-900x1600-focal-ce-cb.py \
+  projects/configs/proposed_method/proposed-nuscenes-resnext50-dcn-haa-256x704-focal-ce-cb.py \
   4 \
-  --work-dir work_dirs/proposed_resnext50_dcn_haa
+  --work-dir work_dirs/proposed_resnext50_dcn_haa_256x704
 ```
 
-### Alternative HAA config
+### Historical alternative HAA config
 
 ```bash
 bash tools/dist_train.sh \
@@ -54,9 +54,9 @@ bash tools/dist_train.sh \
 
 ```bash
 bash tools/dist_train.sh \
-  projects/configs/comparison/compare-baseline-nuscenes-bevdet-occ-r50-256x704.py \
+  projects/configs/occ_study/baseline-nuscenes-bevdet-occ-r50-256x704.py \
   4 \
-  --work-dir work_dirs/baseline_bevdet_occ_r50
+  --work-dir work_dirs/baseline_bevdet_occ_r50_256x704
 ```
 
 If you only need single-GPU debugging, replace the launcher with:
@@ -71,8 +71,8 @@ python tools/train.py <config> --work-dir <work_dir>
 
 ```bash
 bash tools/dist_test.sh \
-  projects/configs/proposed_method/proposed-nuscenes-resnext50-dcn-haa-900x1600-focal-ce-cb.py \
-  ckpts/proposed_resnext50_dcn_haa.pth \
+  projects/configs/proposed_method/proposed-nuscenes-resnext50-dcn-haa-256x704-focal-ce-cb.py \
+  ckpts/proposed_resnext50_dcn_haa_256x704.pth \
   4 \
   --eval miou
 ```
@@ -91,17 +91,17 @@ bash tools/dist_test.sh \
 
 ```bash
 bash tools/dist_test.sh \
-  projects/configs/proposed_method/proposed-nuscenes-resnext50-dcn-haa-900x1600-focal-ce-cb.py \
-  ckpts/proposed_resnext50_dcn_haa.pth \
+  projects/configs/proposed_method/proposed-nuscenes-resnext50-dcn-haa-256x704-focal-ce-cb.py \
+  ckpts/proposed_resnext50_dcn_haa_256x704.pth \
   4 \
   --eval miou \
-  --eval-options show_dir=work_dirs/proposed_resnext50_dcn_haa/results
+  --eval-options show_dir=work_dirs/proposed_resnext50_dcn_haa_256x704/results
 ```
 
 Saved predictions are written under:
 
 ```text
-work_dirs/proposed_resnext50_dcn_haa/results/<scene-name>/<sample-token>/pred.npz
+work_dirs/proposed_resnext50_dcn_haa_256x704/results/<scene-name>/<sample-token>/pred.npz
 ```
 
 ## 4. Reproduce the Paper Visualizations
@@ -110,9 +110,9 @@ work_dirs/proposed_resnext50_dcn_haa/results/<scene-name>/<sample-token>/pred.np
 
 ```bash
 python tools/analysis_tools/vis_occ.py \
-  work_dirs/proposed_resnext50_dcn_haa/results \
+  work_dirs/proposed_resnext50_dcn_haa_256x704/results \
   --root_path ./data/nuscenes \
-  --save_path ./vis/proposed_resnext50_dcn_haa \
+  --save_path ./vis/proposed_resnext50_dcn_haa_256x704 \
   --format image
 ```
 
@@ -120,8 +120,8 @@ python tools/analysis_tools/vis_occ.py \
 
 ```bash
 python tools/analysis_tools/vis_occ_bev.py \
-  --results-dir work_dirs/proposed_resnext50_dcn_haa/results \
-  --compare-results-dir work_dirs/baseline_bevdet_occ_r50/results \
+  --results-dir work_dirs/proposed_resnext50_dcn_haa_256x704/results \
+  --compare-results-dir work_dirs/baseline_bevdet_occ_r50_256x704/results \
   --output-dir ./bev_vis/proposed_vs_baseline \
   --max-samples 50
 ```
@@ -131,8 +131,8 @@ python tools/analysis_tools/vis_occ_bev.py \
 ```bash
 python tools/analysis_tools/vis_occ_full_compare.py \
   --bev-vis-dir ./bev_vis/proposed_vs_baseline \
-  --baseline-results-dir work_dirs/baseline_bevdet_occ_r50/results \
-  --ours-results-dir work_dirs/proposed_resnext50_dcn_haa/results \
+  --baseline-results-dir work_dirs/baseline_bevdet_occ_r50_256x704/results \
+  --ours-results-dir work_dirs/proposed_resnext50_dcn_haa_256x704/results \
   --output-dir ./full_compare/proposed_vs_baseline
 ```
 
@@ -144,8 +144,8 @@ These scripts are the ones used to assemble the qualitative examples under `figs
 
 ```bash
 python tools/analysis_tools/benchmark.py \
-  projects/configs/proposed_method/proposed-nuscenes-resnext50-dcn-haa-900x1600-focal-ce-cb.py \
-  ckpts/proposed_resnext50_dcn_haa.pth \
+  projects/configs/proposed_method/proposed-nuscenes-resnext50-dcn-haa-256x704-focal-ce-cb.py \
+  ckpts/proposed_resnext50_dcn_haa_256x704.pth \
   --samples 200 \
   --log-interval 20
 ```
@@ -164,14 +164,14 @@ python tools/analysis_tools/benchmark_sequential.py \
 
 ```bash
 python tools/analysis_tools/get_flops.py \
-  projects/configs/proposed_method/proposed-nuscenes-resnext50-dcn-haa-900x1600-focal-ce-cb.py
+  projects/configs/proposed_method/proposed-nuscenes-resnext50-dcn-haa-256x704-focal-ce-cb.py
 ```
 
 ## 6. Deployment-Facing Configs
 
 TensorRT-oriented wrapper configs are provided with the `-trt.py` suffix:
 
-- `projects/configs/proposed_method/proposed-nuscenes-resnext50-dcn-haa-900x1600-focal-ce-cb-trt.py`
+- `projects/configs/proposed_method/proposed-nuscenes-resnext50-dcn-haa-256x704-focal-ce-cb-trt.py`
 - `projects/configs/proposed_method/proposed-nuscenes-resnext101-dcn-haa-256x704-cb-trt.py`
 
 The broader config archive under `projects/configs/occ_study/` also includes deployment wrappers used during larger experiment sweeps.

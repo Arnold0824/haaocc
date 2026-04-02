@@ -1,4 +1,4 @@
-# Plug-and-Play Height-Aware Decoder Refinement for Efficient Camera-Only 3D Semantic Occupancy Prediction
+# Deployment-oriented camera-only 3D semantic occupancy prediction for autonomous driving via height-aware feature gating
 
 <p align="center">
   Code release for a deployment-oriented decoder refinement on top of FlashOcc-style camera-only BEV occupancy pipelines.
@@ -15,7 +15,7 @@
   <img src="figs/Figure_1.png" width="94%" alt="Overall pipeline of the proposed method">
 </p>
 
-## Overview
+## Description
 
 This repository accompanies the paper "Plug-and-Play Height-Aware Decoder Refinement for Efficient Camera-Only 3D Semantic Occupancy Prediction". The project revisits the decoder stage of efficient BEV occupancy pipelines and keeps the deployment-friendly FlashOcc design philosophy: most computation stays in 2D BEV space, while voxel semantics are produced only at the final stage.
 
@@ -29,6 +29,64 @@ Our key observation is that channel-to-height decoding is efficient but spatiall
 - 33.79 mIoU vs. 32.08 for the full cumulative system on Occ3D-nuScenes.
 - Largest gains on thin and height-sensitive categories such as barrier, bicycle, motorcycle, pedestrian, and traffic cone.
 
+## Dataset Information
+
+- Third-party benchmark: Occ3D-nuScenes
+- Benchmark homepage: <https://tsinghua-mars-lab.github.io/Occ3D/>
+- Raw driving dataset: nuScenes
+- nuScenes homepage: <https://www.nuscenes.org/>
+- This repository does not redistribute the original datasets. Please obtain access from the official sources and follow their usage terms.
+- The experiments use the official Occ3D-nuScenes train/validation split and the semantic taxonomy released with the benchmark.
+
+Expected local data layout:
+
+```text
+data/
+  nuscenes/
+    samples/
+    sweeps/
+    v1.0-trainval/
+    gts/
+    bevdetv2-nuscenes_infos_train.pkl
+    bevdetv2-nuscenes_infos_val.pkl
+    occ3d_panoptic/   # optional, only for panoptic or ray-based evaluation
+```
+
+## Code Information
+
+- Main custom implementation: `projects/mmdet3d_plugin/`
+- Main method configs: `projects/configs/proposed_method/`
+- Comparison and archive configs: `projects/configs/comparison/` and `projects/configs/occ_study/`
+- Training, evaluation, benchmarking, and visualization scripts: `tools/`
+- Supporting documentation: `docs/INSTALL.md`, `docs/USAGE.md`, `docs/CONFIGS.md`, and `docs/THIRD_PARTY.md`
+- Public repository referenced in the manuscript: <https://github.com/Arnold0824/haaocc>
+
+## Requirements
+
+The main software environment used for the experiments is:
+
+- Python 3.8
+- PyTorch 1.10.0
+- MMCV 1.5.3
+- MMDetection 2.25.1
+- MMDetection3D 1.0.0rc4
+- MMDeploy 0.9.0
+- CUDA Toolkit 11.7
+- TensorRT 8.6.1.6
+
+Installable Python dependencies are listed in `requirements.txt`.
+
+## Methodology
+
+The reproducibility workflow of this repository is:
+
+1. Download the official Occ3D-nuScenes annotations and the corresponding nuScenes sensor data from the original sources.
+2. Generate the metadata files used by the BEVDet-style data loader.
+3. Train the baseline, backbone-improved, HAA-enhanced, and loss-ablation variants with the provided configs.
+4. Evaluate checkpoints with the official Occ3D-nuScenes mIoU protocol and, when needed, additional ray-based evaluation.
+5. Benchmark computational cost and deployment-side latency with the provided scripts.
+6. Render BEV and full 3D qualitative visualizations from saved predictions.
+
 ## Main Results
 
 All latency numbers below are deployment-side FP16 TensorRT measurements with batch size 1.
@@ -37,9 +95,9 @@ All latency numbers below are deployment-side FP16 TensorRT measurements with ba
 | --- | ---: | ---: | ---: | ---: |
 | FlashOcc baseline | 44.74 | 248.57 | 14.79 | 32.08 |
 | + ResNeXt50 | 44.22 | 251.83 | 15.35 | 32.46 |
-| + DCN | 45.21 | 251.66 | 16.28 | 32.83 |
-| + HAA | 45.51 | 263.55 | 17.49 | 33.41 |
-| + Multi-loss (full) | 45.51 | 263.55 | 17.49 | 33.79 |
+| + DCN | 45.21 | 253.85 | 16.28 | 32.83 |
+| + HAA | 45.51 | 265.74 | 17.49 | 33.41 |
+| + Multi-loss (full) | 45.51 | 265.74 | 17.49 | 33.79 |
 
 | Category group | Mean IoU gain over FlashOcc |
 | --- | ---: |
@@ -141,9 +199,9 @@ Compared with the baseline, our model produces more coherent upright structures 
 - `docs/`: installation notes, usage recipes, config map, and third-party notes.
 - `mmdetection3d/`, `mmdeploy/`, `ppl.cv/`: bundled upstream code used for training and deployment workflows.
 
-## Quick Start
+## Usage Instructions
 
-### Installation
+### 1. Installation
 
 See `docs/INSTALL.md` for the full environment setup. The paper experiments were built around:
 
@@ -154,7 +212,7 @@ See `docs/INSTALL.md` for the full environment setup. The paper experiments were
 - MMDetection3D 1.0.0rc4
 - MMDeploy 0.9.0 for deployment-side latency measurements
 
-### Data Preparation
+### 2. Dataset Preparation
 
 Generate the nuScenes metadata used by the configs:
 
@@ -177,34 +235,34 @@ data/
 
 For panoptic or ray-based evaluation, keep `occ3d_panoptic/` under `data/nuscenes/`.
 
-### Training
+### 3. Training
 
-Train the main HAA-enhanced model:
-
-```bash
-bash tools/dist_train.sh \
-  projects/configs/proposed_method/proposed-nuscenes-resnext50-dcn-haa-900x1600-focal-ce-cb.py \
-  4 \
-  --work-dir work_dirs/proposed_resnext50_dcn_haa
-```
-
-Train the FlashOcc-style baseline used in comparison experiments:
+Train the 256x704 final HAA-enhanced model:
 
 ```bash
 bash tools/dist_train.sh \
-  projects/configs/comparison/compare-baseline-nuscenes-bevdet-occ-r50-256x704.py \
+  projects/configs/proposed_method/proposed-nuscenes-resnext50-dcn-haa-256x704-focal-ce-cb.py \
   4 \
-  --work-dir work_dirs/baseline_bevdet_occ_r50
+  --work-dir work_dirs/proposed_resnext50_dcn_haa_256x704
 ```
 
-### Evaluation
+Train the FlashOcc-style baseline used in the paper comparison experiments:
+
+```bash
+bash tools/dist_train.sh \
+  projects/configs/occ_study/baseline-nuscenes-bevdet-occ-r50-256x704.py \
+  4 \
+  --work-dir work_dirs/baseline_bevdet_occ_r50_256x704
+```
+
+### 4. Evaluation
 
 Evaluate mIoU:
 
 ```bash
 bash tools/dist_test.sh \
-  projects/configs/proposed_method/proposed-nuscenes-resnext50-dcn-haa-900x1600-focal-ce-cb.py \
-  ckpts/proposed_resnext50_dcn_haa.pth \
+  projects/configs/proposed_method/proposed-nuscenes-resnext50-dcn-haa-256x704-focal-ce-cb.py \
+  ckpts/proposed_resnext50_dcn_haa_256x704.pth \
   4 \
   --eval miou
 ```
@@ -213,21 +271,21 @@ Save predictions for visualization:
 
 ```bash
 bash tools/dist_test.sh \
-  projects/configs/proposed_method/proposed-nuscenes-resnext50-dcn-haa-900x1600-focal-ce-cb.py \
-  ckpts/proposed_resnext50_dcn_haa.pth \
+  projects/configs/proposed_method/proposed-nuscenes-resnext50-dcn-haa-256x704-focal-ce-cb.py \
+  ckpts/proposed_resnext50_dcn_haa_256x704.pth \
   4 \
   --eval miou \
-  --eval-options show_dir=work_dirs/proposed_resnext50_dcn_haa/results
+  --eval-options show_dir=work_dirs/proposed_resnext50_dcn_haa_256x704/results
 ```
 
-### Visualization
+### 5. Visualization
 
 Render BEV comparisons:
 
 ```bash
 python tools/analysis_tools/vis_occ_bev.py \
-  --results-dir work_dirs/proposed_resnext50_dcn_haa/results \
-  --compare-results-dir work_dirs/baseline_bevdet_occ_r50/results \
+  --results-dir work_dirs/proposed_resnext50_dcn_haa_256x704/results \
+  --compare-results-dir work_dirs/baseline_bevdet_occ_r50_256x704/results \
   --output-dir ./bev_vis/proposed_vs_baseline \
   --max-samples 50
 ```
@@ -237,8 +295,8 @@ Render full 3D comparison panels:
 ```bash
 python tools/analysis_tools/vis_occ_full_compare.py \
   --bev-vis-dir ./bev_vis/proposed_vs_baseline \
-  --baseline-results-dir work_dirs/baseline_bevdet_occ_r50/results \
-  --ours-results-dir work_dirs/proposed_resnext50_dcn_haa/results \
+  --baseline-results-dir work_dirs/baseline_bevdet_occ_r50_256x704/results \
+  --ours-results-dir work_dirs/proposed_resnext50_dcn_haa_256x704/results \
   --output-dir ./full_compare/proposed_vs_baseline
 ```
 
@@ -250,3 +308,17 @@ Additional training, evaluation, benchmarking, and visualization recipes are col
 - `docs/USAGE.md`
 - `docs/CONFIGS.md`
 - `docs/THIRD_PARTY.md`
+
+## Citations
+
+If you use this code package, dataset setup, or benchmark workflow, please cite the following resources where appropriate:
+
+- Occ3D: <https://tsinghua-mars-lab.github.io/Occ3D/>
+- nuScenes: <https://www.nuscenes.org/>
+- The accompanying manuscript: "Plug-and-Play Height-Aware Decoder Refinement for Efficient Camera-Only 3D Semantic Occupancy Prediction"
+
+## License and Contribution Guidelines
+
+- This package includes local copies of several third-party components under `mmdetection3d/`, `mmdeploy/`, `ppl.cv/`, and `lib/`. Their original licenses and attribution files remain in the corresponding directories.
+- No additional project-wide contribution workflow is defined for the peer-review package.
+- For peer review and reproducibility purposes, please use the provided configs and documentation as the reference entry points.
